@@ -1,10 +1,5 @@
 ﻿<!DOCTYPE html>
 
-<!--
-  COLLABORATORS:
-  Zaanie Bowen
--->
-
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -106,8 +101,7 @@
 		ctx.stroke();
 	}
 
-// This allows the Javascript code inside this block to only run when the page
-// has finished loading in the browser.
+// This allows the Javascript code inside this block to only run when the page has finished loading in the browser.
 $(document).ready(function() {
 
 	if ($.getUrlVar('size') && $.getUrlVar('size') >= 6){
@@ -179,8 +173,7 @@ $(document).ready(function() {
 		board.prepareNewGame();
 	});
 
-// This script extracts parameters from the URL
-// from jquery-howto.blogspot.com
+// This script extracts parameters from the URL from jquery-howto.blogspot.com
 $.extend({
   getUrlVars: function(){
     var vars = [], hash;
