@@ -1,0 +1,233 @@
+﻿<!DOCTYPE html>
+
+<!--
+  COLLABORATORS:
+  Zaanie Bowen
+-->
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Checkerboard</title>
+
+<!-- Load style sheets -->
+<link rel="stylesheet" type="text/css" href="mainLayout.css" />
+
+<!-- Load any supplemental Javascript libraries here -->
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
+<script type="text/javascript" src="checker.js"></script>
+<script type="text/javascript" src="boardEvent.js"></script>
+<script type="text/javascript" src="board.js"></script>
+
+<script type="text/javascript">
+	var DEFAULT_BOARD_SIZE = 8;
+	//data model
+	var board;
+
+	// Draw the checkerboard
+	function drawCheckerboard(boardSize) {
+		const canvas = document.getElementById('checkerboardCanvas');
+		const ctx = canvas.getContext('2d');
+		const squareSize = canvas.width / boardSize;
+
+		// Clear canvas first
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+		for (let row = 0; row < boardSize; row++) {
+			for (let col = 0; col < boardSize; col++) {
+				// Alternate black and white squares
+				if ((row + col) % 2 === 0) {
+					ctx.fillStyle = 'white';
+				} else {
+					ctx.fillStyle = 'black';
+				}
+				ctx.fillRect(col * squareSize, row * squareSize, squareSize, squareSize);
+			}
+		}
+	}
+	function drawCheckers() {
+		const container = document.getElementById('checkerContainer');
+		container.innerHTML = '';
+
+		const boardSize = board.boardSize;
+		const squareSize = 400 / boardSize;
+
+		board.checkers.forEach(checker => {
+			const img = document.createElement('img');
+			img.style.position = 'absolute';
+			img.style.width = `${squareSize}px`;
+			img.style.height = `${squareSize}px`;
+
+			if (checker.color === 'black' && !checker.isking) {
+				img.src = 'black-piece.png';
+			} else if (checker.color === 'black' && checker.isking) {
+				img.src = 'black-king.png';
+			} else if (checker.color === 'red' && !checker.isking) {
+				img.src = 'red-piece.png';
+			} else if (checker.color === 'red' && checker.isking) {
+				img.src = 'red-king.png';
+			}
+
+			img.style.left = `${checker.col * squareSize}px`;
+			img.style.top = `${checker.row * squareSize}px`;
+			container.appendChild(img);
+		});
+	}
+
+	function drawMoveArrow(event) {
+		const canvas = document.getElementById('arrowCanvas');
+		const ctx = canvas.getContext('2d');
+		const boardSize = board.boardSize;
+		const squareSize = 400 / boardSize;
+
+		// Clear previous arrow
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+		const fromX = (event.fromCol + 0.5) * squareSize;
+		const fromY = (event.fromRow + 0.5) * squareSize;
+		const toX = (event.toCol + 0.5) * squareSize;
+		const toY = (event.toRow + 0.5) * squareSize;
+
+		ctx.strokeStyle = 'yellow';
+		ctx.lineWidth = 3;
+		ctx.beginPath();
+		ctx.moveTo(fromX, fromY);
+		ctx.lineTo(toX, toY);
+		ctx.stroke();
+
+		// Draw arrowhead
+		const angle = Math.atan2(toY - fromY, toX - fromX);
+		const headLength = 10;
+		ctx.beginPath();
+		ctx.moveTo(toX, toY);
+		ctx.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), toY - headLength * Math.sin(angle - Math.PI / 6));
+		ctx.moveTo(toX, toY);
+		ctx.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6), toY - headLength * Math.sin(angle + Math.PI / 6));
+		ctx.stroke();
+	}
+
+// This allows the Javascript code inside this block to only run when the page
+// has finished loading in the browser.
+$(document).ready(function() {
+
+	if ($.getUrlVar('size') && $.getUrlVar('size') >= 6){
+		board = new Board($.getUrlVar('size'));
+	} else {
+		board = new Board(DEFAULT_BOARD_SIZE);
+	}
+	
+	// Your code here
+	// Draw the board initially
+	drawCheckerboard(board.boardSize);
+	drawCheckers();
+
+	board.addEventListener('add',function (e) {
+		// Your code here
+		drawCheckers();
+	},true);
+
+	board.addEventListener('move',function (e) {
+		// Your code here
+		drawCheckers();
+	},true);
+
+	board.addEventListener('remove',function (e) {
+		// Your code here
+		drawCheckers();
+	},true);
+
+	board.addEventListener('promote',function (e) {
+		// Your code here
+		drawCheckers();
+		drawMoveArrow(e);
+	},true);
+
+	// Button listeners
+	$("#btnNewGame").click(function(evt) {
+			board.prepareNewGame();
+			drawCheckerboard(board.boardSize);
+			drawCheckers();
+
+			const arrowCanvas = document.getElementById('arrowCanvas');
+			arrowCanvas.getContext('2d').clearRect(0, 0, arrowCanvas.width, arrowCanvas.height);
+		});
+
+		$("#btnMoveRandomly").click(function(evt) {
+			let randomChecker = board.getRandomChecker();
+			let randomLoc = board.getRandomEmptyLocation();
+			if (randomChecker && randomLoc) {
+				board.moveTo(randomChecker, randomLoc.row, randomLoc.col);
+			}
+		});
+
+		$("#btnKingRandomly").click(function(evt) {
+			let randomChecker = board.getRandomNonKing();
+			if (randomChecker) {
+				board.promote(randomChecker);
+			}
+		});
+
+		$("#btnClear").click(function(evt) {
+			board.clear();
+			drawCheckerboard(board.boardSize);
+			drawCheckers();
+
+			const arrowCanvas = document.getElementById('arrowCanvas');
+			arrowCanvas.getContext('2d').clearRect(0, 0, arrowCanvas.width, arrowCanvas.height);
+		});
+
+		board.prepareNewGame();
+	});
+
+// This script extracts parameters from the URL
+// from jquery-howto.blogspot.com
+$.extend({
+  getUrlVars: function(){
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+    for(var i = 0; i < hashes.length; i++)
+    {
+      hash = hashes[i].split('=');
+      vars.push(hash[0]);
+      vars[hash[0]] = hash[1];
+    }
+    return vars;
+  },
+  getUrlVar: function(name){
+    return $.getUrlVars()[name];
+  }
+});
+
+</script>
+
+
+</head>
+
+<body>
+
+<table id="mainTable">
+	<tr>
+		<td id="navigation">
+			<table>
+				<tr><td><input id="btnNewGame" type="button" name="new" value="New Game"/></td></tr>
+				<tr><td><input id="btnMoveRandomly" type="button" name="moveRandomly" value="Move Randomly"/></td></tr>
+				<tr><td><input id="btnKingRandomly" type="button" name="kingRandomly" value="King Randomly"/></td></tr>
+				<tr><td><input id="btnClear" type="button" name="clear" value="Clear"/></td></tr>
+			</table>
+		</td>
+
+		<td id="content">
+			<div style="position: relative; width: 400px; height: 400px;">
+				<canvas id="checkerboardCanvas" width="400" height="400" style="position: absolute; top: 0; left: 0; z-index: 1;"></canvas>
+				<div id="checkerContainer" style="position: absolute; top: 0; left: 0; width: 400px; height: 400px; z-index: 2;"></div>
+				<canvas id="arrowCanvas" width="400" height="400" style="position: absolute; top: 0; left: 0; z-index: 3; pointer-events: none;"></canvas>
+			</div>
+		</td>
+		
+	</tr>
+	
+   </table>
+
+</body>
+
+</html>
